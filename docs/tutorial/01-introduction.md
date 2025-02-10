@@ -1,82 +1,136 @@
----
-title: Tutorial - Introduction
-sidebar_label: Introduction
-slug: introduction
----
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Game</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #game { position: absolute; width: 100%; height: 100%; }
+        #player-count { position: fixed; top: 10px; left: 10px; color: white; font-size: 20px; }
+    </style>
+</head>
+<body>
+    <canvas id="game"></canvas>
+    <div id="player-count">Players: 0</div>
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+    <!-- Import Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-# Getting started
+    <!-- Import Socket.IO -->
+    <script src="/socket.io/socket.io.js"></script>
 
-Welcome to the Socket.IO tutorial!
+    <script>
+        // Your game logic goes here
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('game') });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-In this tutorial we'll create a basic chat application. It requires almost no basic prior knowledge of Node.JS or Socket.IO, so it’s ideal for users of all knowledge levels.
+        // Your other game code...
+    </script>
+</body>
+</html>
+Explanation:
+Three.js: Loaded using the <script src="..."> tag from a CDN link (this loads the Three.js library).
+Socket.IO Client: Similarly, we load Socket.IO using the <script src="..."> tag. This script should be available from the server after you've installed Socket.IO on your server side.
+2. Using import Statement (For Module-Based Setup)
+If you're using ES6 modules (like in a Node.js-based environment), you'll use the import statement to import modules.
 
-## Introduction
+2.1 Set Up the package.json
+You need to set up a Node.js project and indicate that you're using ES6 modules by adding "type": "module" to the package.json file.
 
-Writing a chat application with popular web applications stacks like LAMP (PHP) has normally been very hard. It involves polling the server for changes, keeping track of timestamps, and it’s a lot slower than it should be.
+package.json:
+json
+Copy
+Edit
+{
+  "name": "multiplayer-game",
+  "version": "1.0.0",
+  "description": "A multiplayer 3D game",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "socket.io": "^4.3.2"
+  }
+}
+After creating package.json, run npm install to install Express and Socket.IO packages.
+2.2 Use import in JavaScript
+Now, you can use the import statement to bring in modules.
 
-Sockets have traditionally been the solution around which most real-time chat systems are architected, providing a bi-directional communication channel between a client and a server.
+server.js (for the backend):
+javascript
+Copy
+Edit
+import express from 'express';
+import { Server } from 'socket.io';
+import http from 'http';
 
-This means that the server can *push* messages to clients. Whenever you write a chat message, the idea is that the server will get it and push it to all other connected clients.
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 
-## How to use this tutorial
+app.use(express.static('public'));
 
-### Tooling
+io.on('connection', (socket) => {
+    console.log('New player connected:', socket.id);
+    socket.on('disconnect', () => {
+        console.log('Player disconnected:', socket.id);
+    });
+});
 
-Any text editor (from a basic text editor to a complete IDE such as [VS Code](https://code.visualstudio.com/)) should be sufficient to complete this tutorial.
+server.listen(3000, () => {
+    console.log('Server running on http://localhost:3000');
+});
+client.js (for the frontend):
+javascript
+Copy
+Edit
+import * as THREE from 'three';
+import { io } from 'socket.io-client';
 
-Additionally, at the end of each step you will find a link to some online platforms ([CodeSandbox](https://codesandbox.io) and [StackBlitz](https://stackblitz.com), namely), allowing you to run the code directly from your browser:
+const socket = io();
 
-![Screenshot of the CodeSandbox platform](/images/codesandbox.png)
+// Setup Three.js scene
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-### Syntax settings
+const playerGeometry = new THREE.BoxGeometry();
+const playerMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const player = new THREE.Mesh(playerGeometry, playerMaterial);
+scene.add(player);
 
-In the Node.js world, there are two ways to import modules:
+camera.position.z = 5;
 
-- the standard way: ECMAScript modules (or ESM)
+function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+}
 
-```js
-import { Server } from "socket.io";
-```
-
-Reference: https://nodejs.org/api/esm.html
-
-- the legacy way: CommonJS
-
-```js
-const { Server } = require("socket.io");
-```
-
-Reference: https://nodejs.org/api/modules.html
-
-Socket.IO supports both syntax. 
-
-:::tip
-
-We recommend using the ESM syntax in your project, though this might not always be feasible due to some packages not supporting this syntax.
-
-:::
-
-For your convenience, throughout the tutorial, each code block allows you to select your preferred syntax:
-
-<Tabs groupId="lang">
-  <TabItem value="cjs" label="CommonJS" default>
-
-```js
-const { Server } = require("socket.io");
-```
-
-  </TabItem>
-  <TabItem value="mjs" label="ES modules">
-
-```js
-import { Server } from "socket.io";
-```
-
-  </TabItem>
-</Tabs>
-
-
-Ready? Click "Next" to get started.
+animate();
+index.html:
+html
+Copy
+Edit
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Game</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+    </style>
+</head>
+<body>
+    <script type="module" src="client.js"></script>
+</body>
+</html>
